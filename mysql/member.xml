@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper 
+	PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+	"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+
+
+<mapper namespace="memberMapper">
+	<select id="getMemberList_Cnt" resultType="java.lang.String">
+		select count(no) as total_cnt
+		from member_master
+		where name like concat('%', ifnull(#{keyword}, ''), '%')
+	</select>
+	<select id="getMemberList" parameterType="java.util.HashMap" resultType="project.pc.model.memberModel">
+		<include refid="global.pagingUpper" />
+		select *
+		from member_master
+		where name like concat('%', ifnull(#{keyword}, ''), '%')
+		order by name
+		<include refid="global.pagingLower" />
+	</select>
+	<select id="getUserList_Cnt" resultType="java.lang.String">
+		select count(t1.no) as total_cnt
+		from user_master t1
+        join company_master t2 on t2.no = t1.company_no
+		where t1.name like concat('%', ifnull(#{keyword}, ''), '%')
+		and isdel = 0
+		<if test="st_company > 0">
+		and company_no = #{st_company}
+		</if>
+	</select>
+	<select id="getUserList" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		<include refid="global.pagingUpper" />
+		select t1.*, t2.name AS company_name
+		from user_master t1
+        join company_master t2 on t2.no = t1.company_no
+		where t1.name like concat('%', ifnull(#{keyword}, ''), '%')
+		and isdel = 0
+		<if test="st_company > 0">
+		and company_no = #{st_company}
+		</if>
+		order by date desc
+		<include refid="global.pagingLower" />
+	</select>
+	<insert id="insertMember" parameterType="java.util.Map">
+		INSERT INTO member_master (name, id, passwd, level, email, number)
+		values (#{name}, #{id}, #{passwd}, #{level}, #{email}, #{number});
+	</insert>
+	<update id="updateMember" parameterType="java.util.Map">
+		UPDATE member_master
+		SET id=#{id}, passwd=#{passwd}, name=#{name}, level=#{level}, number=#{number}, email=#{email}
+		WHERE no = #{no};
+	</update>
+	<delete id="deleteMember" parameterType="java.util.List">
+		DELETE FROM member_master WHERE no in <foreach collection="list" item="item" index="index" open="(" separator="," close=")">#{item}</foreach>;
+	</delete>
+	<select id="getMember" parameterType="java.util.Map" resultType="project.pc.model.memberModel">
+		SELECT *
+		FROM member_master
+		where no = #{no};
+	</select>
+	<select id="getCompany" resultType="java.util.Map">
+		select *
+		from company_master
+		order by name
+	</select>
+	<update id="updateUserModify" parameterType="Map">
+		update user_master
+		set level = #{level}
+		where no = #{no}
+	</update>
+</mapper>
