@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper 
+	PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+	"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+
+
+<mapper namespace="deptMapper">
+
+	<select id="getDeptListST" resultType="Map">
+		select *
+		from jobclass_master
+		order by name
+	</select>
+
+	<select id="getDeptListCount" resultType="String" parameterType="Map">
+		select count(no)
+		from jobclass_master
+		where name like concat('%', ifnull(#{keyword},''), '%')
+	</select>
+
+	<select id="getDeptList" resultType="Map">
+		<include refid="global.pagingUpper" />
+
+		select *
+		from jobclass_master
+		where name like concat('%', ifnull(#{keyword},''), '%')
+		order by name
+
+		<include refid="global.pagingLower" />
+	</select>
+
+	<insert id="insertDept" parameterType="Map">
+		insert into jobclass_master (no, name) values (#{no}, #{name})
+	</insert>
+
+	<update id="updateDept" parameterType="Map">
+		update jobclass_master
+		set	name = #{name}
+		where no = #{no}
+	</update>
+
+	<delete id="deleteDept" parameterType="String">
+		delete from jobclass_master where no in <foreach collection="array" item="item" index="index" open="(" separator="," close=")">${array[index]}</foreach>
+	</delete>
+
+</mapper>

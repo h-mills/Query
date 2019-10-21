@@ -1,0 +1,919 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+	"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+	
+	<mapper namespace="cardMapper">
+		<select id="getCardCompanyList" parameterType="java.util.HashMap" resultType="project.pc.model.companyModel">
+			select c.no
+			     , c.name
+			from order_master o
+			left join company_master c on (c.no = o.company_no)
+     		group by c.no, c.name
+      		order by c.name
+		</select>
+
+		<select id="getCardOrderList" parameterType="java.util.HashMap" resultType="project.pc.model.orderModel">
+			select no , title
+			from order_master
+			where status > 0 and status != 5
+			<if test="company_no != 0">
+			and company_no = #{company_no}
+			</if>
+			order by no
+		</select>
+
+		<select id="getCardOrderListMake" parameterType="java.util.HashMap" resultType="project.pc.model.orderModel">
+			select no , title
+			from order_master
+			where status > 0 and status != 5
+			<if test="company_no != 0">
+			and company_no = #{company_no}
+			</if>
+			order by no
+		</select>
+
+		<select id="getCardViewList_Cnt" parameterType="java.util.HashMap" resultType="java.lang.String">
+			select count(*) as total_count
+			from 	(
+					select card_config_no
+					from	(
+							select cm.card_config_no, cm.isdelete
+							from carddata_master cm
+							union all
+							select cm.card_config_no, cm.isdelete
+							from carddata_micro_master cm
+							union all
+							select cm.card_config_no, cm.isdelete
+							from carddata_wide_master cm
+							union all
+							select cm.card_config_no, cm.isdelete
+							from carddata_microwide_master cm
+							) T
+					left join card_config cc on T.card_config_no = cc.no
+					where 1=1
+					<if test="st_company > 0">
+					and cc.company_no = #{st_company}
+					</if>
+					<if test="st_order > 0">
+					and cc.order_no = #{st_order}
+					</if>
+					<if test="rd_isdelete != 'all' and rd_isdelete != null">
+					and T.isdelete = #{rd_isdelete}
+					</if>
+					) CNT
+		</select>
+
+		<select id="getCardViewList" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			<include refid="global.pagingUpper" />
+
+			select om.status, cc.company_no, cc.order_no, cc.url, cc.category, cc.language, T.*
+			from 	(
+					select 	cm.card_config_no, cm.no as master_no, cm.image, cm.dept_no, cm.count, cm.isdelete, cm.date, cm.jobclass, 
+							ko.no as ko_data_no, ko.name as ko_name, ko.part as ko_part, ko.position as ko_position, ko.duty as ko_duty, ko.address as ko_address, ko.email as ko_email, ko.tel as ko_tel, ko.fax as ko_fax, ko.mobile as ko_mobile, 
+							en.no as en_data_no, en.name as en_name, en.part as en_part, en.position as en_position, en.duty as en_duty, en.address as en_address, en.email as en_email, en.tel as en_tel, en.fax as en_fax, en.mobile as en_mobile, 
+							cn.no as cn_data_no, cn.name as cn_name, cn.part as cn_part, cn.position as cn_position, cn.duty as cn_duty, cn.address as cn_address, cn.email as cn_email, cn.tel as cn_tel, cn.fax as cn_fax, cn.mobile as cn_mobile, 
+							jp.no as jp_data_no, jp.name as jp_name, jp.part as jp_part, jp.position as jp_position, jp.duty as jp_duty, jp.address as jp_address, jp.email as jp_email, jp.tel as jp_tel, jp.fax as jp_fax, jp.mobile as jp_mobile
+					from carddata_master cm
+					left join carddata_ko ko on cm.no = ko.carddata_master_no
+					left join carddata_en en on cm.no = en.carddata_master_no
+					left join carddata_cn cn on cm.no = cn.carddata_master_no
+					left join carddata_jp jp on cm.no = jp.carddata_master_no
+					union all
+					select 	cm.card_config_no, cm.no as master_no, cm.image, cm.dept_no, cm.count, cm.isdelete, cm.date, cm.jobclass, 
+							ko.no as ko_data_no, ko.name as ko_name, ko.part as ko_part, ko.position as ko_position, ko.duty as ko_duty, ko.address as ko_address, ko.email as ko_email, ko.tel as ko_tel, ko.fax as ko_fax, ko.mobile as ko_mobile, 
+							en.no as en_data_no, en.name as en_name, en.part as en_part, en.position as en_position, en.duty as en_duty, en.address as en_address, en.email as en_email, en.tel as en_tel, en.fax as en_fax, en.mobile as en_mobile, 
+							cn.no as cn_data_no, cn.name as cn_name, cn.part as cn_part, cn.position as cn_position, cn.duty as cn_duty, cn.address as cn_address, cn.email as cn_email, cn.tel as cn_tel, cn.fax as cn_fax, cn.mobile as cn_mobile, 
+							jp.no as jp_data_no, jp.name as jp_name, jp.part as jp_part, jp.position as jp_position, jp.duty as jp_duty, jp.address as jp_address, jp.email as jp_email, jp.tel as jp_tel, jp.fax as jp_fax, jp.mobile as jp_mobile
+					from carddata_micro_master cm
+					left join carddata_micro_ko ko on ko.carddata_master_no = cm.no
+					left join carddata_micro_en en on en.carddata_master_no = cm.no
+					left join carddata_micro_cn cn on cn.carddata_master_no = cm.no
+					left join carddata_micro_jp jp on jp.carddata_master_no = cm.no
+					union all
+					select 	cm.card_config_no, cm.no as master_no, cm.image, cm.dept_no, cm.count, cm.isdelete, cm.date, cm.jobclass, 
+							ko.no as ko_data_no, ko.name as ko_name, ko.part as ko_part, ko.position as ko_position, ko.duty as ko_duty, ko.address as ko_address, ko.email as ko_email, ko.tel as ko_tel, ko.fax as ko_fax, ko.mobile as ko_mobile, 
+							en.no as en_data_no, en.name as en_name, en.part as en_part, en.position as en_position, en.duty as en_duty, en.address as en_address, en.email as en_email, en.tel as en_tel, en.fax as en_fax, en.mobile as en_mobile, 
+							cn.no as cn_data_no, cn.name as cn_name, cn.part as cn_part, cn.position as cn_position, cn.duty as cn_duty, cn.address as cn_address, cn.email as cn_email, cn.tel as cn_tel, cn.fax as cn_fax, cn.mobile as cn_mobile, 
+							jp.no as jp_data_no, jp.name as jp_name, jp.part as jp_part, jp.position as jp_position, jp.duty as jp_duty, jp.address as jp_address, jp.email as jp_email, jp.tel as jp_tel, jp.fax as jp_fax, jp.mobile as jp_mobile
+					from carddata_wide_master cm
+					left join carddata_wide_ko ko on ko.carddata_master_no = cm.no
+					left join carddata_wide_en en on en.carddata_master_no = cm.no
+					left join carddata_wide_cn cn on cn.carddata_master_no = cm.no
+					left join carddata_wide_jp jp on jp.carddata_master_no = cm.no
+					union all
+					select 	cm.card_config_no, cm.no as master_no, cm.image, cm.dept_no, cm.count, cm.isdelete, cm.date, cm.jobclass, 
+							ko.no as ko_data_no, ko.name as ko_name, ko.part as ko_part, ko.position as ko_position, ko.duty as ko_duty, ko.address as ko_address, ko.email as ko_email, ko.tel as ko_tel, ko.fax as ko_fax, ko.mobile as ko_mobile, 
+							en.no as en_data_no, en.name as en_name, en.part as en_part, en.position as en_position, en.duty as en_duty, en.address as en_address, en.email as en_email, en.tel as en_tel, en.fax as en_fax, en.mobile as en_mobile, 
+							cn.no as cn_data_no, cn.name as cn_name, cn.part as cn_part, cn.position as cn_position, cn.duty as cn_duty, cn.address as cn_address, cn.email as cn_email, cn.tel as cn_tel, cn.fax as cn_fax, cn.mobile as cn_mobile, 
+							jp.no as jp_data_no, jp.name as jp_name, jp.part as jp_part, jp.position as jp_position, jp.duty as jp_duty, jp.address as jp_address, jp.email as jp_email, jp.tel as jp_tel, jp.fax as jp_fax, jp.mobile as jp_mobile
+					from carddata_microwide_master cm
+					left join carddata_microwide_ko ko on ko.carddata_master_no = cm.no
+					left join carddata_microwide_en en on en.carddata_master_no = cm.no
+					left join carddata_microwide_cn cn on cn.carddata_master_no = cm.no
+					left join carddata_microwide_jp jp on jp.carddata_master_no = cm.no
+					) T
+			left join card_config cc on T.card_config_no = cc.no
+            left join order_master om on cc.order_no = om.no
+			where 1=1
+			<if test="st_company > 0">
+			and cc.company_no = #{st_company}
+			</if>
+			<if test="st_order > 0">
+			and cc.order_no = #{st_order}
+			</if>
+			<if test="rd_isdelete != 'all' and rd_isdelete != null">
+			and T.isdelete = #{rd_isdelete}
+			</if>
+			group by T.card_config_no, T.master_no
+			order by cc.company_no, cc.order_no desc, T.master_no
+
+			<include refid="global.pagingLower" />
+		</select>
+
+		<select id="getCardViewList_Cnt2" parameterType="java.util.HashMap" resultType="java.lang.String">
+			select count(*)
+			from 	(
+					select t.*
+					from 	(
+							select cm.card_config_no, cm.dept_no, cm.no as master_no, cm.isdelete, cm.jobclass
+							from carddata_master cm
+							left join carddata_ko ko on cm.no = ko.carddata_master_no
+							left join carddata_en en on cm.no = en.carddata_master_no
+							left join carddata_cn cn on cm.no = cn.carddata_master_no
+							left join carddata_jp jp on cm.no = jp.carddata_master_no
+							union all
+							select cm.card_config_no, cm.dept_no, cm.no as master_no, cm.isdelete, cm.jobclass
+							from carddata_micro_master cm
+							left join carddata_micro_ko ko on ko.carddata_master_no = cm.no
+							left join carddata_micro_en en on en.carddata_master_no = cm.no
+							left join carddata_micro_cn cn on cn.carddata_master_no = cm.no
+							left join carddata_micro_jp jp on jp.carddata_master_no = cm.no
+							union all
+							select cm.card_config_no, cm.dept_no, cm.no as master_no, cm.isdelete, cm.jobclass
+							from carddata_wide_master cm
+							left join carddata_wide_ko ko on ko.carddata_master_no = cm.no
+							left join carddata_wide_en en on en.carddata_master_no = cm.no
+							left join carddata_wide_cn cn on cn.carddata_master_no = cm.no
+							left join carddata_wide_jp jp on jp.carddata_master_no = cm.no
+							union all
+							select cm.card_config_no, cm.dept_no, cm.no as master_no, cm.isdelete, cm.jobclass
+							from carddata_microwide_master cm
+							left join carddata_microwide_ko ko on ko.carddata_master_no = cm.no
+							left join carddata_microwide_en en on en.carddata_master_no = cm.no
+							left join carddata_microwide_cn cn on cn.carddata_master_no = cm.no
+							left join carddata_microwide_jp jp on jp.carddata_master_no = cm.no
+							) t
+					left join card_config cc on t.card_config_no = cc.no
+					left join company_config co_c on cc.company_no = co_c.company_no
+					where 1=1
+			    	<if test="st_industry != null">
+					and co_c.industry_cd in <foreach collection="st_industry" item="item" index="index" open="(" separator="," close=")">${st_industry[index]}</foreach>
+					</if>
+					<if test="st_dept >= 0"> 
+					and t.jobclass = #{st_dept}
+					</if>
+					<if test="rd_isdelete != 'all' and rd_isdelete != null">
+					and t.isdelete = #{rd_isdelete}
+					</if>
+					group by t.card_config_no, t.master_no
+					) TT
+		</select>
+
+		<select id="getCardViewList2" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			<include refid="global.pagingUpper" />
+
+			select om.status, cc.company_no, cc.order_no, cc.url, cc.category, cc.language, t.*
+			from 	(
+					select 	cm.card_config_no, cm.no as master_no, cm.image, cm.dept_no, cm.count, cm.isdelete, cm.date, cm.jobclass, 
+							ko.no as ko_data_no, ko.name as ko_name, ko.part as ko_part, ko.position as ko_position, ko.duty as ko_duty, ko.address as ko_address, ko.email as ko_email, ko.tel as ko_tel, ko.fax as ko_fax, ko.mobile as ko_mobile, 
+							en.no as en_data_no, en.name as en_name, en.part as en_part, en.position as en_position, en.duty as en_duty, en.address as en_address, en.email as en_email, en.tel as en_tel, en.fax as en_fax, en.mobile as en_mobile, 
+							cn.no as cn_data_no, cn.name as cn_name, cn.part as cn_part, cn.position as cn_position, cn.duty as cn_duty, cn.address as cn_address, cn.email as cn_email, cn.tel as cn_tel, cn.fax as cn_fax, cn.mobile as cn_mobile, 
+							jp.no as jp_data_no, jp.name as jp_name, jp.part as jp_part, jp.position as jp_position, jp.duty as jp_duty, jp.address as jp_address, jp.email as jp_email, jp.tel as jp_tel, jp.fax as jp_fax, jp.mobile as jp_mobile
+					from carddata_master cm
+					left join carddata_ko ko on cm.no = ko.carddata_master_no
+					left join carddata_en en on cm.no = en.carddata_master_no
+					left join carddata_cn cn on cm.no = cn.carddata_master_no
+					left join carddata_jp jp on cm.no = jp.carddata_master_no
+					union all
+					select 	cm.card_config_no, cm.no as master_no, cm.image, cm.dept_no, cm.count, cm.isdelete, cm.date, cm.jobclass, 
+							ko.no as ko_data_no, ko.name as ko_name, ko.part as ko_part, ko.position as ko_position, ko.duty as ko_duty, ko.address as ko_address, ko.email as ko_email, ko.tel as ko_tel, ko.fax as ko_fax, ko.mobile as ko_mobile, 
+							en.no as en_data_no, en.name as en_name, en.part as en_part, en.position as en_position, en.duty as en_duty, en.address as en_address, en.email as en_email, en.tel as en_tel, en.fax as en_fax, en.mobile as en_mobile, 
+							cn.no as cn_data_no, cn.name as cn_name, cn.part as cn_part, cn.position as cn_position, cn.duty as cn_duty, cn.address as cn_address, cn.email as cn_email, cn.tel as cn_tel, cn.fax as cn_fax, cn.mobile as cn_mobile, 
+							jp.no as jp_data_no, jp.name as jp_name, jp.part as jp_part, jp.position as jp_position, jp.duty as jp_duty, jp.address as jp_address, jp.email as jp_email, jp.tel as jp_tel, jp.fax as jp_fax, jp.mobile as jp_mobile
+					from carddata_micro_master cm
+					left join carddata_micro_ko ko on ko.carddata_master_no = cm.no
+					left join carddata_micro_en en on en.carddata_master_no = cm.no
+					left join carddata_micro_cn cn on cn.carddata_master_no = cm.no
+					left join carddata_micro_jp jp on jp.carddata_master_no = cm.no
+					union all
+					select 	cm.card_config_no, cm.no as master_no, cm.image, cm.dept_no, cm.count, cm.isdelete, cm.date, cm.jobclass, 
+							ko.no as ko_data_no, ko.name as ko_name, ko.part as ko_part, ko.position as ko_position, ko.duty as ko_duty, ko.address as ko_address, ko.email as ko_email, ko.tel as ko_tel, ko.fax as ko_fax, ko.mobile as ko_mobile, 
+							en.no as en_data_no, en.name as en_name, en.part as en_part, en.position as en_position, en.duty as en_duty, en.address as en_address, en.email as en_email, en.tel as en_tel, en.fax as en_fax, en.mobile as en_mobile, 
+							cn.no as cn_data_no, cn.name as cn_name, cn.part as cn_part, cn.position as cn_position, cn.duty as cn_duty, cn.address as cn_address, cn.email as cn_email, cn.tel as cn_tel, cn.fax as cn_fax, cn.mobile as cn_mobile, 
+							jp.no as jp_data_no, jp.name as jp_name, jp.part as jp_part, jp.position as jp_position, jp.duty as jp_duty, jp.address as jp_address, jp.email as jp_email, jp.tel as jp_tel, jp.fax as jp_fax, jp.mobile as jp_mobile
+					from carddata_wide_master cm
+					left join carddata_wide_ko ko on ko.carddata_master_no = cm.no
+					left join carddata_wide_en en on en.carddata_master_no = cm.no
+					left join carddata_wide_cn cn on cn.carddata_master_no = cm.no
+					left join carddata_wide_jp jp on jp.carddata_master_no = cm.no
+					union all
+					select 	cm.card_config_no, cm.no as master_no, cm.image, cm.dept_no, cm.count, cm.isdelete, cm.date, cm.jobclass, 
+							ko.no as ko_data_no, ko.name as ko_name, ko.part as ko_part, ko.position as ko_position, ko.duty as ko_duty, ko.address as ko_address, ko.email as ko_email, ko.tel as ko_tel, ko.fax as ko_fax, ko.mobile as ko_mobile, 
+							en.no as en_data_no, en.name as en_name, en.part as en_part, en.position as en_position, en.duty as en_duty, en.address as en_address, en.email as en_email, en.tel as en_tel, en.fax as en_fax, en.mobile as en_mobile, 
+							cn.no as cn_data_no, cn.name as cn_name, cn.part as cn_part, cn.position as cn_position, cn.duty as cn_duty, cn.address as cn_address, cn.email as cn_email, cn.tel as cn_tel, cn.fax as cn_fax, cn.mobile as cn_mobile, 
+							jp.no as jp_data_no, jp.name as jp_name, jp.part as jp_part, jp.position as jp_position, jp.duty as jp_duty, jp.address as jp_address, jp.email as jp_email, jp.tel as jp_tel, jp.fax as jp_fax, jp.mobile as jp_mobile
+					from carddata_microwide_master cm
+					left join carddata_microwide_ko ko on ko.carddata_master_no = cm.no
+					left join carddata_microwide_en en on en.carddata_master_no = cm.no
+					left join carddata_microwide_cn cn on cn.carddata_master_no = cm.no
+					left join carddata_microwide_jp jp on jp.carddata_master_no = cm.no
+					) t
+			left join card_config cc on t.card_config_no = cc.no
+			left join company_config co_c on cc.company_no = co_c.company_no
+            left join order_master om on cc.order_no = om.no
+			where 1=1
+			<if test="st_industry != null">
+			and co_c.industry_cd in <foreach collection="st_industry" item="item" index="index" open="(" separator="," close=")">${st_industry[index]}</foreach>
+			</if>
+			<if test="st_dept >= 0">
+			and t.jobclass = #{st_dept}
+			</if>
+			<if test="rd_isdelete != 'all' and rd_isdelete != null">
+			and t.isdelete = #{rd_isdelete}
+			</if>
+			group by t.card_config_no, t.master_no
+			order by cc.company_no, cc.order_no desc, t.master_no
+
+			<include refid="global.pagingLower" />
+		</select>
+
+		<select id="getCardViewList_Cnt3" parameterType="java.util.HashMap" resultType="java.lang.String">
+			select count(*)
+			from 	(
+					select t.*
+					from 	(
+							select cm.card_config_no, cm.dept_no, cm.no as master_no, cm.isdelete, ko.name as ko_name, en.name as en_name, cn.name as cn_name, jp.name as jp_name
+							from carddata_master cm
+							left join carddata_ko ko on cm.no = ko.carddata_master_no
+							left join carddata_en en on cm.no = en.carddata_master_no
+							left join carddata_cn cn on cm.no = cn.carddata_master_no
+							left join carddata_jp jp on cm.no = jp.carddata_master_no
+							union all
+							select cm.card_config_no, cm.dept_no, cm.no as master_no, cm.isdelete, ko.name as ko_name, en.name as en_name, cn.name as cn_name, jp.name as jp_name
+							from carddata_micro_master cm
+							left join carddata_micro_ko ko on ko.carddata_master_no = cm.no
+							left join carddata_micro_en en on en.carddata_master_no = cm.no
+							left join carddata_micro_cn cn on cn.carddata_master_no = cm.no
+							left join carddata_micro_jp jp on jp.carddata_master_no = cm.no
+							union all
+							select cm.card_config_no, cm.dept_no, cm.no as master_no, cm.isdelete, ko.name as ko_name, en.name as en_name, cn.name as cn_name, jp.name as jp_name
+							from carddata_wide_master cm
+							left join carddata_wide_ko ko on ko.carddata_master_no = cm.no
+							left join carddata_wide_en en on en.carddata_master_no = cm.no
+							left join carddata_wide_cn cn on cn.carddata_master_no = cm.no
+							left join carddata_wide_jp jp on jp.carddata_master_no = cm.no
+							union all
+							select cm.card_config_no, cm.dept_no, cm.no as master_no, cm.isdelete, ko.name as ko_name, en.name as en_name, cn.name as cn_name, jp.name as jp_name
+							from carddata_microwide_master cm
+							left join carddata_microwide_ko ko on ko.carddata_master_no = cm.no
+							left join carddata_microwide_en en on en.carddata_master_no = cm.no
+							left join carddata_microwide_cn cn on cn.carddata_master_no = cm.no
+							left join carddata_microwide_jp jp on jp.carddata_master_no = cm.no
+							) t
+					left join card_config cc on t.card_config_no = cc.no
+					left join company_config co_c on cc.company_no = co_c.company_no
+					where 1=1
+					<if test="keyword != null and keyword != ''"> 
+					and (
+						t.ko_name like concat('%', #{keyword}, '%')
+						or t.en_name like concat('%', #{keyword}, '%')
+						or t.cn_name like concat('%', #{keyword}, '%')
+						or t.jp_name like concat('%', #{keyword}, '%')
+						)
+					</if>
+					<if test="rd_isdelete != 'all' and rd_isdelete != null">
+					and t.isdelete = #{rd_isdelete}
+					</if>
+					group by t.card_config_no, t.master_no
+					) TT
+		</select>
+
+		<select id="getCardViewList3" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			<include refid="global.pagingUpper" />
+
+			select om.status, cc.company_no, cc.order_no, cc.url, cc.category, cc.language, t.*
+			from 	(
+					select 	cm.card_config_no, cm.no as master_no, cm.image, cm.dept_no, cm.count, cm.isdelete, cm.date, 
+							ko.no as ko_data_no, ko.name as ko_name, ko.part as ko_part, ko.position as ko_position, ko.duty as ko_duty, ko.address as ko_address, ko.email as ko_email, ko.tel as ko_tel, ko.fax as ko_fax, ko.mobile as ko_mobile, 
+							en.no as en_data_no, en.name as en_name, en.part as en_part, en.position as en_position, en.duty as en_duty, en.address as en_address, en.email as en_email, en.tel as en_tel, en.fax as en_fax, en.mobile as en_mobile, 
+							cn.no as cn_data_no, cn.name as cn_name, cn.part as cn_part, cn.position as cn_position, cn.duty as cn_duty, cn.address as cn_address, cn.email as cn_email, cn.tel as cn_tel, cn.fax as cn_fax, cn.mobile as cn_mobile, 
+							jp.no as jp_data_no, jp.name as jp_name, jp.part as jp_part, jp.position as jp_position, jp.duty as jp_duty, jp.address as jp_address, jp.email as jp_email, jp.tel as jp_tel, jp.fax as jp_fax, jp.mobile as jp_mobile
+					from carddata_master cm
+					left join carddata_ko ko on cm.no = ko.carddata_master_no
+					left join carddata_en en on cm.no = en.carddata_master_no
+					left join carddata_cn cn on cm.no = cn.carddata_master_no
+					left join carddata_jp jp on cm.no = jp.carddata_master_no
+					union all
+					select 	cm.card_config_no, cm.no as master_no, cm.image, cm.dept_no, cm.count, cm.isdelete, cm.date, 
+							ko.no as ko_data_no, ko.name as ko_name, ko.part as ko_part, ko.position as ko_position, ko.duty as ko_duty, ko.address as ko_address, ko.email as ko_email, ko.tel as ko_tel, ko.fax as ko_fax, ko.mobile as ko_mobile, 
+							en.no as en_data_no, en.name as en_name, en.part as en_part, en.position as en_position, en.duty as en_duty, en.address as en_address, en.email as en_email, en.tel as en_tel, en.fax as en_fax, en.mobile as en_mobile, 
+							cn.no as cn_data_no, cn.name as cn_name, cn.part as cn_part, cn.position as cn_position, cn.duty as cn_duty, cn.address as cn_address, cn.email as cn_email, cn.tel as cn_tel, cn.fax as cn_fax, cn.mobile as cn_mobile, 
+							jp.no as jp_data_no, jp.name as jp_name, jp.part as jp_part, jp.position as jp_position, jp.duty as jp_duty, jp.address as jp_address, jp.email as jp_email, jp.tel as jp_tel, jp.fax as jp_fax, jp.mobile as jp_mobile
+					from carddata_micro_master cm
+					left join carddata_micro_ko ko on ko.carddata_master_no = cm.no
+					left join carddata_micro_en en on en.carddata_master_no = cm.no
+					left join carddata_micro_cn cn on cn.carddata_master_no = cm.no
+					left join carddata_micro_jp jp on jp.carddata_master_no = cm.no
+					union all
+					select 	cm.card_config_no, cm.no as master_no, cm.image, cm.dept_no, cm.count, cm.isdelete, cm.date, 
+							ko.no as ko_data_no, ko.name as ko_name, ko.part as ko_part, ko.position as ko_position, ko.duty as ko_duty, ko.address as ko_address, ko.email as ko_email, ko.tel as ko_tel, ko.fax as ko_fax, ko.mobile as ko_mobile, 
+							en.no as en_data_no, en.name as en_name, en.part as en_part, en.position as en_position, en.duty as en_duty, en.address as en_address, en.email as en_email, en.tel as en_tel, en.fax as en_fax, en.mobile as en_mobile, 
+							cn.no as cn_data_no, cn.name as cn_name, cn.part as cn_part, cn.position as cn_position, cn.duty as cn_duty, cn.address as cn_address, cn.email as cn_email, cn.tel as cn_tel, cn.fax as cn_fax, cn.mobile as cn_mobile, 
+							jp.no as jp_data_no, jp.name as jp_name, jp.part as jp_part, jp.position as jp_position, jp.duty as jp_duty, jp.address as jp_address, jp.email as jp_email, jp.tel as jp_tel, jp.fax as jp_fax, jp.mobile as jp_mobile
+					from carddata_wide_master cm
+					left join carddata_wide_ko ko on ko.carddata_master_no = cm.no
+					left join carddata_wide_en en on en.carddata_master_no = cm.no
+					left join carddata_wide_cn cn on cn.carddata_master_no = cm.no
+					left join carddata_wide_jp jp on jp.carddata_master_no = cm.no
+					union all
+					select 	cm.card_config_no, cm.no as master_no, cm.image, cm.dept_no, cm.count, cm.isdelete, cm.date, 
+							ko.no as ko_data_no, ko.name as ko_name, ko.part as ko_part, ko.position as ko_position, ko.duty as ko_duty, ko.address as ko_address, ko.email as ko_email, ko.tel as ko_tel, ko.fax as ko_fax, ko.mobile as ko_mobile, 
+							en.no as en_data_no, en.name as en_name, en.part as en_part, en.position as en_position, en.duty as en_duty, en.address as en_address, en.email as en_email, en.tel as en_tel, en.fax as en_fax, en.mobile as en_mobile, 
+							cn.no as cn_data_no, cn.name as cn_name, cn.part as cn_part, cn.position as cn_position, cn.duty as cn_duty, cn.address as cn_address, cn.email as cn_email, cn.tel as cn_tel, cn.fax as cn_fax, cn.mobile as cn_mobile, 
+							jp.no as jp_data_no, jp.name as jp_name, jp.part as jp_part, jp.position as jp_position, jp.duty as jp_duty, jp.address as jp_address, jp.email as jp_email, jp.tel as jp_tel, jp.fax as jp_fax, jp.mobile as jp_mobile
+					from carddata_microwide_master cm
+					left join carddata_microwide_ko ko on ko.carddata_master_no = cm.no
+					left join carddata_microwide_en en on en.carddata_master_no = cm.no
+					left join carddata_microwide_cn cn on cn.carddata_master_no = cm.no
+					left join carddata_microwide_jp jp on jp.carddata_master_no = cm.no
+					) t
+			left join card_config cc on t.card_config_no = cc.no
+			left join company_config co_c on cc.company_no = co_c.company_no
+            left join order_master om on cc.order_no = om.no
+			where 1=1
+			<if test="keyword != null and keyword != ''"> 
+			and (
+				t.ko_name like concat('%', #{keyword}, '%')
+				or t.en_name like concat('%', #{keyword}, '%')
+				or t.cn_name like concat('%', #{keyword}, '%')
+				or t.jp_name like concat('%', #{keyword}, '%')
+				)
+			</if>
+			<if test="rd_isdelete != 'all' and rd_isdelete != null">
+			and t.isdelete = #{rd_isdelete}
+			</if>
+			group by t.card_config_no, t.master_no
+			order by cc.company_no, cc.order_no desc, t.master_no
+
+			<include refid="global.pagingLower" />
+		</select>
+
+		<update id="updateIsdelte" parameterType="java.util.Map">
+			<choose>
+				<when test="category == 0">
+				UPDATE carddata_master
+				</when>
+				<when test="category == 1">
+				UPDATE carddata_wide_master
+				</when>
+				<when test="category == 2">
+				UPDATE carddata_micro_master
+				</when>
+				<when test="category == 3">
+				UPDATE carddata_microwide_master
+				</when>
+			</choose>
+			SET isdelete = 1
+			WHERE no = #{no}
+		</update>
+
+		<update id="updateIsdelte_normal" parameterType="java.util.Map">
+			<choose>
+				<when test="category == 0">
+				UPDATE carddata_master
+				</when>
+				<when test="category == 1">
+				UPDATE carddata_wide_master
+				</when>
+				<when test="category == 2">
+				UPDATE carddata_micro_master
+				</when>
+				<when test="category == 3">
+				UPDATE carddata_microwide_master
+				</when>
+			</choose>
+			SET isdelete = 0
+			WHERE no = #{no}
+		</update>
+
+		<select id="getOrderData" parameterType="java.util.Map" resultType="java.util.Map">
+			select om.no, om.language, date_format(om.orderdate, '%Y-%m-%d') as orderdate, um.id, um.name, om.status, om.company_no, om.orderth , count(cc.no) AS createcheck, cc.no AS card_config_no, count(od.no) as filecount, ifnull(cc.category, -1) AS category
+			from order_master om
+			left join user_master um on (om.user_no = um.no)
+     		left join card_config cc on (om.no = cc.order_no)
+            left join order_data od on (om.no = od.order_no
+									and od.file is not null
+                                    and od.file not like '-')
+			where om.no = #{st_order}
+		</select>
+
+		<insert id="insertCardConfig" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="no">
+  			insert into card_config (company_no, order_no, url, category, language) values (#{company_no}, #{order_no}, #{langdingurl}, #{category}, #{language})
+			<selectKey keyProperty="no" resultType="java.lang.Integer" order="AFTER">
+				SELECT LAST_INSERT_ID() as no;
+			</selectKey>
+  		</insert>
+
+  		<insert id="insertCardData_Master" parameterType="java.util.Map" useGeneratedKeys="true" keyProperty="no">
+  			<choose>
+				<when test="category == 0">
+				INSERT INTO carddata_master (image, card_config_no, dept_no, kakaoid, lineid, youtube, jobclass)
+				</when>
+				<when test="category == 1">
+				INSERT INTO carddata_wide_master (image, card_config_no, dept_no, kakaoid, lineid, youtube, jobclass)
+				</when>
+				<when test="category == 2">
+				INSERT INTO carddata_micro_master (image, card_config_no, dept_no, kakaoid, lineid, youtube, jobclass)
+				</when>
+				<when test="category == 3">
+				INSERT INTO carddata_microwide_master (image, card_config_no, dept_no, kakaoid, lineid, youtube, jobclass)
+				</when>
+			</choose>
+  			VALUES (#{image}, #{card_config_no}, #{dept_no}, #{kakaoid}, #{lineid}, #{youtube}, #{jobclass})
+  			<selectKey keyProperty="no" resultType="java.lang.Integer" order="AFTER">
+				SELECT LAST_INSERT_ID() as no;
+			</selectKey>
+  		</insert>
+
+  		<insert id="insertCardData" parameterType="java.util.Map">
+	  		<choose>
+				<when test="category == 0">
+					<if test="lang == 'ko'">INSERT INTO carddata_ko</if>
+		  			<if test="lang == 'en'">INSERT INTO carddata_en</if>
+		  			<if test="lang == 'cn'">INSERT INTO carddata_cn</if>
+		  			<if test="lang == 'jp'">INSERT INTO carddata_jp</if>
+		  			(name, part, position, duty, address, email, tel, fax, mobile, carddata_master_no) VALUES
+		  			<foreach collection="data" item="item" separator=",">
+		  			(#{item.name}, #{item.part}, #{item.position}, #{item.duty}, #{item.address}, #{item.email}, #{item.tel}, #{item.fax}, #{item.mobile}, #{item.carddata_master_no})</foreach>
+				</when>
+				<when test="category == 1">
+					<if test="lang == 'ko'">INSERT INTO carddata_wide_ko</if>
+		  			<if test="lang == 'en'">INSERT INTO carddata_wide_en</if>
+		  			<if test="lang == 'cn'">INSERT INTO carddata_wide_cn</if>
+		  			<if test="lang == 'jp'">INSERT INTO carddata_wide_jp</if>
+		  			(name, part, position, duty, address, email, tel, fax, mobile, carddata_master_no) VALUES
+		  			<foreach collection="data" item="item" separator=",">
+		  			(#{item.name}, #{item.part}, #{item.position}, #{item.duty}, #{item.address}, #{item.email}, #{item.tel}, #{item.fax}, #{item.mobile}, #{item.carddata_master_no})</foreach>
+				</when>
+				<when test="category == 2">
+					<if test="lang == 'ko'">INSERT INTO carddata_micro_ko</if>
+		  			<if test="lang == 'en'">INSERT INTO carddata_micro_en</if>
+		  			<if test="lang == 'cn'">INSERT INTO carddata_micro_cn</if>
+		  			<if test="lang == 'jp'">INSERT INTO carddata_micro_jp</if>
+		  			(name, part, position, duty, address, email, tel, fax, mobile, carddata_master_no) VALUES
+		  			<foreach collection="data" item="item" separator=",">
+		  			(#{item.name}, #{item.part}, #{item.position}, #{item.duty}, #{item.address}, #{item.email}, #{item.tel}, #{item.fax}, #{item.mobile}, #{item.carddata_master_no})</foreach>
+				</when>
+				<when test="category == 3">
+					<if test="lang == 'ko'">INSERT INTO carddata_microwide_ko</if>
+		  			<if test="lang == 'en'">INSERT INTO carddata_microwide_en</if>
+		  			<if test="lang == 'cn'">INSERT INTO carddata_microwide_cn</if>
+		  			<if test="lang == 'jp'">INSERT INTO carddata_microwide_jp</if>
+		  			(name, part, position, duty, address, email, tel, fax, mobile, carddata_master_no) VALUES
+		  			<foreach collection="data" item="item" separator=",">
+		  			(#{item.name}, #{item.part}, #{item.position}, #{item.duty}, #{item.address}, #{item.email}, #{item.tel}, #{item.fax}, #{item.mobile}, #{item.carddata_master_no})</foreach>
+				</when>
+			</choose>
+  		</insert>
+
+		<select id="getCardDown" parameterType="java.util.Map" resultType="java.util.Map">
+			SELECT no from 
+			<if test="category == 0">
+			carddata_master
+			</if>
+			<if test="category == 1">
+			carddata_wide_master
+			</if>
+			<if test="category == 2">
+			carddata_micro_master
+			</if>
+			<if test="category == 3">
+			carddata_microwide_master
+			</if>
+			where card_config_no = #{card_config_no};
+		</select>
+
+		<select id="getCardOrderInfo" parameterType="java.util.Map" resultType="java.util.Map">
+			select cm.name, o.title
+			from card_config c
+			left join order_master o on (c.order_no = o.no)
+			left join company_master cm on (o.company_no = cm.no)
+			where c.no = #{card_config_no}
+		</select>
+
+		<!-- 회사정보, 주문정보 데이터 -->
+		<select id="getStatsOrderData" parameterType="java.util.Map" resultType="java.util.Map">
+			select c.name AS company_name, o.title AS order_title
+			from order_master o
+			left join company_master c on (o.company_no = c.no)
+			where o.no = #{order_no}
+		</select>
+
+		<!-- 총 스캔수 -->
+		<select id="getStatsTotalCnt" parameterType="java.util.Map" resultType="int">
+			SELECT count(no) as count
+			<if test="category == 0">
+			FROM card_detinfo
+			</if>
+			<if test="category == 1">
+			FROM card_wide_detinfo
+			</if>
+			<if test="category == 2">
+			FROM card_micro_detinfo
+			</if>
+			<if test="category == 3">
+			FROM card_microwide_detinfo
+			</if>
+			WHERE date between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+			AND card_data_no = #{carddata_master_no}
+		</select>
+
+		<!-- 월별 스캔수 -->
+		<select id="getStatsMonthData" parameterType="java.util.Map" resultType="project.pc.model.cardStatsModel">
+			SELECT year(date) as year, month(date) as month, count(no) as count 
+	 		<if test="category == 0">
+			FROM card_detinfo
+			</if>
+			<if test="category == 1">
+			FROM card_wide_detinfo
+			</if>
+			<if test="category == 2">
+			FROM card_micro_detinfo
+			</if>
+			<if test="category == 3">
+			FROM card_microwide_detinfo
+			</if>
+			WHERE date between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+			AND card_data_no = #{carddata_master_no}
+	 		GROUP BY year(date), month(date) 
+	 		ORDER BY date 
+		</select>
+		
+		<!-- 일별 스캔수 -->
+		<select id="getStatsDailyData" parameterType="java.util.Map" resultType="project.pc.model.cardStatsModel">
+			SELECT year(date) as year, month(date) as month, dayofmonth(date) as day, count(no) as count 
+			<if test="category == 0">
+			FROM card_detinfo
+			</if>
+			<if test="category == 1">
+			FROM card_wide_detinfo
+			</if>
+			<if test="category == 2">
+			FROM card_micro_detinfo
+			</if>
+			<if test="category == 3">
+			FROM card_microwide_detinfo
+			</if>
+			WHERE date between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+			AND card_data_no = #{carddata_master_no}
+			GROUP BY year(date), month(date), dayofmonth(date)
+	 		ORDER BY date
+		</select>
+		
+		<!-- 시간대별 스캔수 -->
+		<select id="getStatsHourData" parameterType="java.util.Map" resultType="project.pc.model.cardStatsModel">
+			SELECT hour(date) as hour, count(*) as count
+			<if test="category == 0">
+			FROM card_detinfo
+			</if>
+			<if test="category == 1">
+			FROM card_wide_detinfo
+			</if>
+			<if test="category == 2">
+			FROM card_micro_detinfo
+			</if>
+			<if test="category == 3">
+			FROM card_microwide_detinfo
+			</if>
+			WHERE date between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+			AND card_data_no = #{carddata_master_no}
+			GROUP BY hour(date)
+			ORDER BY hour(date)
+		</select>
+
+		<!-- 국가별 스캔 데이터 -->
+		<select id="getStatsLocalCnt" parameterType="java.util.Map" resultType="java.util.Map">
+			SELECT count(no) as count, count(distinct nation) as nationcount
+			<if test="category == 0">
+			FROM card_detinfo
+			</if>
+			<if test="category == 1">
+			FROM card_wide_detinfo
+			</if>
+			<if test="category == 2">
+			FROM card_micro_detinfo
+			</if>
+			<if test="category == 3">
+			FROM card_microwide_detinfo
+			</if>
+			WHERE date between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+			AND card_data_no = #{carddata_master_no}
+		</select>
+
+		<!-- 국가별 스캔 데이터 -->
+		<select id="getStatsNationData" parameterType="java.util.Map" resultType="project.pc.model.cardStatsModel">
+			SELECT count(no) as count, nation
+			<if test="category == 0">
+			FROM card_detinfo
+			</if>
+			<if test="category == 1">
+			FROM card_wide_detinfo
+			</if>
+			<if test="category == 2">
+			FROM card_micro_detinfo
+			</if>
+			<if test="category == 3">
+			FROM card_microwide_detinfo
+			</if>
+			WHERE date between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+			AND card_data_no = #{carddata_master_no}
+			GROUP BY nation 
+			ORDER BY count desc
+		</select>
+
+		<!-- 지역별 스캔 데이터 -->
+		<select id="getStatsCityData" parameterType="java.util.Map" resultType="project.pc.model.cardStatsModel">
+			SELECT count(no) as count, nation, city
+			<if test="category == 0">
+			FROM card_detinfo
+			</if>
+			<if test="category == 1">
+			FROM card_wide_detinfo
+			</if>
+			<if test="category == 2">
+			FROM card_micro_detinfo
+			</if>
+			<if test="category == 3">
+			FROM card_microwide_detinfo
+			</if>
+			WHERE date between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+			AND card_data_no = #{carddata_master_no}
+			GROUP BY nation, city
+			ORDER BY count desc
+		</select>
+		
+		<!-- 지역별 스캔 데이터 -->
+		<select id="getStatsAddressData" parameterType="java.util.Map" resultType="project.pc.model.cardStatsModel">
+			<include refid="global.pagingUpper" />
+			SELECT nation, city, address, date(date) as date
+			<if test="category == 0">
+			FROM card_detinfo
+			</if>
+			<if test="category == 1">
+			FROM card_wide_detinfo
+			</if>
+			<if test="category == 2">
+			FROM card_micro_detinfo
+			</if>
+			<if test="category == 3">
+			FROM card_microwide_detinfo
+			</if>
+			WHERE date between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+			AND card_data_no = #{carddata_master_no}
+			ORDER BY date desc, nation, city
+			<include refid="global.pagingLower" />
+		</select>
+		
+		<!-- 지역별 스캔 데이터 -->
+		<select id="getStatsAddressData_Cnt" parameterType="java.util.Map" resultType="String">
+			SELECT count(no)
+			<if test="category == 0">
+			FROM card_detinfo
+			</if>
+			<if test="category == 1">
+			FROM card_wide_detinfo
+			</if>
+			<if test="category == 2">
+			FROM card_micro_detinfo
+			</if>
+			<if test="category == 3">
+			FROM card_microwide_detinfo
+			</if>
+			WHERE date between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+			AND card_data_no = #{carddata_master_no}
+		</select>
+		
+		<!-- 엑셀 지역별 스캔 데이터 -->
+		<select id="getExcelStatsAddressData" parameterType="java.util.Map" resultType="project.pc.model.cardStatsModel">
+			SELECT nation, city, address, date(date) as date
+			<if test="category == 0">
+			FROM card_detinfo
+			</if>
+			<if test="category == 1">
+			FROM card_wide_detinfo
+			</if>
+			<if test="category == 2">
+			FROM card_micro_detinfo
+			</if>
+			<if test="category == 3">
+			FROM card_microwide_detinfo
+			</if>
+			WHERE date between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+			AND card_data_no = #{carddata_master_no}
+			ORDER BY date desc, nation, city
+		</select>
+
+		<update id="updateOrderInfo" parameterType="java.util.Map">
+			update order_master set
+			<if test="category == 0">
+			start = (select min(no) from carddata_master where card_config_no = #{card_config_no}),
+			finish = (select max(no) from carddata_master where card_config_no = #{card_config_no}),
+			count = (select count(no) from carddata_master where card_config_no = #{card_config_no}),
+			</if>
+			<if test="category == 1">
+			start = (select min(no) from carddata_wide_master where card_config_no = #{card_config_no}),
+			finish = (select max(no) from carddata_wide_master where card_config_no = #{card_config_no}),
+			count = (select count(no) from carddata_wide_master where card_config_no = #{card_config_no}),
+			</if>
+			<if test="category == 2">
+			start = (select min(no) from carddata_micro_master where card_config_no = #{card_config_no}),
+			finish = (select max(no) from carddata_micro_master where card_config_no = #{card_config_no}),
+			count = (select count(no) from carddata_micro_master where card_config_no = #{card_config_no}),
+			</if>
+			<if test="category == 3">
+			start = (select min(no) from carddata_microwide_master where card_config_no = #{card_config_no}),
+			finish = (select max(no) from carddata_microwide_master where card_config_no = #{card_config_no}),
+			count = (select count(no) from carddata_microwide_master where card_config_no = #{card_config_no}),
+			</if>
+			status = 2
+			where no = (select order_no from card_config where no = #{card_config_no});
+		</update>
+
+		<update id="updateCompanyInfo" parameterType="java.util.Map">
+			update company_master set 
+			cardcount = (select sum(count) from order_master where company_no = #{company_no})
+			where no = #{company_no}
+		</update>
+	
+		<select id="getCardData" parameterType="java.util.Map" resultType="java.util.Map">
+			select  master.no, master.image,  date_format(master.date, '%Y-%m-%d') as date, master.count, master.isdelete, card_config.language, card_config.url, company_master.name as company,
+			d.no AS data_no, d.name, d.part, d.position, d.duty, d.address, d.email, d.tel, d.fax, d.mobile 
+			<choose>
+				<when test="category == 0">
+					from carddata_master as master
+					<if test="lang == 'ko'">
+					left join carddata_ko as d on master.no = d.carddata_master_no
+					</if>
+					<if test="lang == 'en'">
+					left join carddata_en as d on master.no = d.carddata_master_no
+					</if>
+					<if test="lang == 'cn'">
+					left join carddata_cn as d on master.no = d.carddata_master_no
+					</if>
+					<if test="lang == 'jp'">
+					left join carddata_jp as d on master.no = d.carddata_master_no
+					</if>
+				</when>
+				<when test="category == 1">
+					from carddata_wide_master as master
+					<if test="lang == 'ko'">
+					left join carddata_wide_ko as d on master.no = d.carddata_master_no
+					</if>
+					<if test="lang == 'en'">
+					left join carddata_wide_en as d on master.no = d.carddata_master_no
+					</if>
+					<if test="lang == 'cn'">
+					left join carddata_wide_cn as d on master.no = d.carddata_master_no
+					</if>
+					<if test="lang == 'jp'">
+					left join carddata_wide_jp as d on master.no = d.carddata_master_no
+					</if>
+				</when>
+				<when test="category == 2">
+					from carddata_micro_master as master
+					<if test="lang == 'ko'">
+					left join carddata_micro_ko as d on master.no = d.carddata_master_no
+					</if>
+					<if test="lang == 'en'">
+					left join carddata_micro_en as d on master.no = d.carddata_master_no
+					</if>
+					<if test="lang == 'cn'">
+					left join carddata_micro_cn as d on master.no = d.carddata_master_no
+					</if>
+					<if test="lang == 'jp'">
+					left join carddata_micro_jp as d on master.no = d.carddata_master_no
+					</if>
+				</when>
+				<when test="category == 3">
+					from carddata_microwide_master as master
+					<if test="lang == 'ko'">
+					left join carddata_microwide_ko as d on master.no = d.carddata_master_no
+					</if>
+					<if test="lang == 'en'">
+					left join carddata_microwide_en as d on master.no = d.carddata_master_no
+					</if>
+					<if test="lang == 'cn'">
+					left join carddata_microwide_cn as d on master.no = d.carddata_master_no
+					</if>
+					<if test="lang == 'jp'">
+					left join carddata_microwide_jp as d on master.no = d.carddata_master_no
+					</if>
+				</when>
+			</choose>
+			left join card_config on master.card_config_no = card_config.no
+			left join company_master on card_config.company_no = company_master.no
+			where master.no = #{card_master_no}
+		</select>
+
+		<update id="updateCardData" parameterType="java.util.Map">
+			update
+			<choose>
+				<when test="category == 0">
+					<if test="lang == 'ko'">
+					carddata_ko
+					</if>
+					<if test="lang == 'en'">
+					carddata_en
+					</if>
+					<if test="lang == 'cn'">
+					carddata_cn
+					</if>
+					<if test="lang == 'jp'">
+					carddata_jp
+					</if>
+				</when>
+				<when test="category == 1">
+					<if test="lang == 'ko'">
+					carddata_wide_ko
+					</if>
+					<if test="lang == 'en'">
+					carddata_wide_en
+					</if>
+					<if test="lang == 'cn'">
+					carddata_wide_cn
+					</if>
+					<if test="lang == 'jp'">
+					carddata_wide_jp
+					</if>
+				</when>
+				<when test="category == 2">
+					<if test="lang == 'ko'">
+					carddata_micro_ko
+					</if>
+					<if test="lang == 'en'">
+					carddata_micro_en
+					</if>
+					<if test="lang == 'cn'">
+					carddata_micro_cn
+					</if>
+					<if test="lang == 'jp'">
+					carddata_micro_jp
+					</if>
+				</when>
+				<when test="category == 3">
+					<if test="lang == 'ko'">
+					carddata_microwide_ko
+					</if>
+					<if test="lang == 'en'">
+					carddata_microwide_en
+					</if>
+					<if test="lang == 'cn'">
+					carddata_microwide_cn
+					</if>
+					<if test="lang == 'jp'">
+					carddata_microwide_jp
+					</if>
+				</when>
+			</choose>
+			set name=#{name}, part=#{part}, position=#{position}, duty=#{duty}, address=#{address}, email=#{email}, tel=#{tel}, fax=#{fax}, mobile=#{mobile}
+			where no = #{data_no}
+		</update>
+
+		<update id="updateImage" parameterType="java.util.Map">
+			<choose>
+				<when test="category == 0">
+				UPDATE carddata_master
+				</when>
+				<when test="category == 1">
+				UPDATE carddata_wide_master
+				</when>
+				<when test="category == 2">
+				UPDATE carddata_micro_master
+				</when>
+				<when test="category == 3">
+				UPDATE carddata_microwide_master
+				</when>
+			</choose>
+			SET image = #{file}
+			WHERE no = #{no}
+		</update>
+
+		<select id="getOrderDataList" parameterType="Map" resultType="HashMap">
+			SELECT * FROM order_data where file is not null and file not like '-' and order_no = #{order_no} 
+		</select>
+		
+		<select id="getcardxlsfiles" parameterType="HashMap" resultType="HashMap">
+			select file from order_data where file !='-' and order_no = #{order_no}
+		</select>
+	</mapper>

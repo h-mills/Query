@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper 
+	PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+	"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+
+
+<mapper namespace="industryMapper">
+
+	<select id="getIndustryListST" resultType="Map">
+		select i.cd, i.pcd, i.name, level, ord
+		from   (
+				select industry_connect(cd) AS idx, @level AS level, @ord := @ord + 1 AS ord
+				from   (
+						select  @start_with := 0,
+								@idx := @start_with,
+								@level := 0,
+                        		@ord := 0
+						) sub, industry_master
+				where @idx is not null
+				) t
+		join industry_master i on i.cd = t.idx
+		order by ord
+	</select>
+
+	<select id="getIndustryListCount" parameterType="Map" resultType="String">
+		select count(*)
+		from   (
+				select industry_connect(cd) AS idx, @level AS level, @ord := @ord + 1 AS ord
+				from   (
+						select  @start_with := 0,
+								@idx := @start_with,
+								@level := 0,
+                        		@ord := 0
+						) sub, industry_master
+				where @idx is not null
+				) t
+		join industry_master i on i.cd = t.idx
+		where i.name like concat('%', ifnull(#{keyword},''), '%')
+	</select>
+
+	<select id="getIndustryList" parameterType="Map" resultType="Map">
+		<include refid="global.pagingUpper" />
+
+		select i.cd, i.pcd, i.name, level, ord
+		from   (
+				select industry_connect(cd) AS idx, @level AS level, @ord := @ord + 1 AS ord
+				from   (
+						select  @start_with := 0,
+								@idx := @start_with,
+								@level := 0,
+                        		@ord := 0
+						) sub, industry_master
+				where @idx is not null
+				) t
+		join industry_master i on i.cd = t.idx
+		where i.name like concat('%', ifnull(#{keyword},''), '%')
+		order by ord
+
+		<include refid="global.pagingLower" />
+	</select>
+
+	<select id="getCdCheck" resultType="Integer" parameterType="Map">
+		select count(*)
+		from industry_master
+		where cd like #{cd}
+	</select>
+
+	<insert id="insertIndustry" parameterType="Map">
+		insert into industry_master (cd, pcd, name) values (#{cd}, #{pcd}, #{name})
+	</insert>
+
+	<update id="updateIndustry" parameterType="Map">
+		update industry_master
+		set	pcd = #{pcd},
+			name = #{name}
+		where cd = #{cd}
+	</update>
+
+	<delete id="deleteIndustry" parameterType="String">
+		delete from industry_master where cd in <foreach collection="array" item="item" index="index" open="(" separator="," close=")">${array[index]}</foreach>
+	</delete>
+
+	<select id="getIndustryList_back" resultType="Map">
+		select i.cd, i.pcd, i.name, level, ord
+		from   (
+				select industry_connect(cd) AS idx, @level AS level, @ord := @ord + 1 AS ord
+				from   (
+						select  @start_with := 0,
+								@idx := @start_with,
+								@level := 0,
+                        		@ord := 0
+						) sub, industry_master
+				where @idx is not null
+				) t
+		join industry_master i ON i.cd = t.idx
+		order by ord
+	</select>
+
+
+</mapper>

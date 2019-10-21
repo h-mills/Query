@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper 
+	PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+	"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+
+
+<mapper namespace="companyMapper">
+	<select id="getCompanyList_Cnt" parameterType="java.util.HashMap" resultType="java.lang.String">
+		select count(no) as total_cnt
+		from	(
+				select cm.*
+				from company_master cm
+				left join company_config cc on cm.no = cc.company_no
+				where cm.date between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+				<if test="keyword != null">
+				and cm.name LIKE concat('%', #{keyword}, '%')
+			    </if>
+			    <if test="st_industry != null">
+				and cc.industry_cd in <foreach collection="st_industry" item="item" index="index" open="(" separator="," close=")">${st_industry[index]}</foreach>
+				</if>
+				group by cm.no
+				) T
+	</select>
+
+	<select id="getCompanyList" parameterType="java.util.HashMap" resultType="project.pc.model.companyModel">
+		<include refid="global.pagingUpper" />
+		select cm.*
+		from company_master cm
+		left join company_config cc on cm.no = cc.company_no
+		where cm.date between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+		<if test="keyword != null">
+		and cm.name LIKE concat('%', #{keyword}, '%')
+	    </if>
+	    <if test="st_industry != null">
+		and cc.industry_cd in <foreach collection="st_industry" item="item" index="index" open="(" separator="," close=")">${st_industry[index]}</foreach>
+		</if>
+		group by cm.no
+	    
+		order by cm.name
+		<include refid="global.pagingLower" />
+	</select>
+
+	<select id="getCompanyDetail" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		select c.*
+		     , count(u.no) as usercount
+		from company_master c
+		left join user_master u on (u.company_no = c.no)
+		where c.no = #{no}
+	</select>
+
+	<select id="getOrderList_Cnt" parameterType="java.util.HashMap" resultType="java.lang.String">
+		select count(o.no) as total_cnt
+		from order_master o
+		where o.company_no = #{no}
+		and orderdate between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+	</select>
+
+	<select id="getOrderList" parameterType="java.util.HashMap" resultType="project.pc.model.orderModel">
+		<include refid="global.pagingUpper" />
+		select o.*
+		     , u.name as name
+		     , case cc.category
+					when 0 then '일반'
+					when 1 then '와이드'
+					when 2 then '마이크로'
+					when 3 then '마이크로와이드'
+					else '(미생성)'
+				end AS category_name
+		from order_master o
+		left join user_master u on (u.no = o.user_no)
+		left join card_config cc on (o.no = cc.order_no)
+		where o.company_no = #{no} 
+		and orderdate between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+		order by o.orderdate desc
+		<include refid="global.pagingLower" />
+	</select>
+
+	<select id="getOrderDetail" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		select o.*
+		     , c.name as company_name
+		     , u.name as user_name
+		from order_master o
+		left join company_master c on (c.no = o.company_no)
+		left join user_master u on (u.no = o.user_no)
+		where o.no = #{no}
+	</select>
+
+	<select id="getIndustryInfo" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		select cd, name
+		from company_config c
+		left join industry_master i on i.cd = c.industry_cd
+		where company_no = #{no}
+		order by industry_cd
+	</select>
+	
+	<select id="getcompanyorg" parameterType="HashMap" resultType="HashMap">
+		select 	t.*, d.name as dept_nm
+		from 	(
+				select 0 as no, 0 as cd, 0 as parent_cd, name, no as company_no, 0 as dept_no, 0 as ord, 0 as level
+				from company_master
+				union all
+				select o.no, o.cd, o.parent_cd, o.name, o.company_no, o.dept_no, ord, level
+				from   (
+						select get_organogram_tree(#{company_no}) AS idx, @level AS level, @ord := @ord + 1 AS ord
+						from   (
+								select  @start_with := 0,
+										@idx := @start_with,
+										@level := 0,
+										@ord := 0
+								) sub, organogram
+						where @idx is not null
+						) t
+				join organogram o on o.cd = t.idx
+				) t
+		left join jobclass_master d on t.dept_no = d.no
+		where company_no = #{company_no}
+        order by ord
+	</select>
+	<insert id="insertDept" parameterType="HashMap" useGeneratedKeys="true" keyProperty="no">
+  		insert into organogram (cd, parent_cd, name, company_no, dept_no) values (#{cd}, #{pcd}, #{nm}, #{company_no}, #{stdept})
+		<selectKey keyProperty="no" resultType="java.lang.Integer" order="AFTER">
+			SELECT LAST_INSERT_ID() as no;
+		</selectKey>
+  	</insert>
+
+	<update id="updateDept" parameterType="HashMap">
+		update organogram
+		set name = #{nm},
+		dept_no = #{stdept}
+		where no = #{no}
+	</update>
+
+	<delete id="deleteDept" parameterType="HashMap">
+		delete from organogram where no = #{no}
+	</delete>
+
+	<select id="getStDept" resultType="HashMap">
+		select * from jobclass_master order by name
+	</select>
+	<select id="getMaxCd" resultType="java.lang.Integer">
+		select max(cd) from organogram;
+	</select>
+</mapper>

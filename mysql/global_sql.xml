@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper 
+	PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+	"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+
+
+<mapper namespace="global">
+	
+	<!--  페이징 상단 -->
+	<sql id="pagingUpper">
+		SELECT *
+		FROM (
+			  SELECT @RNUM := @RNUM + 1 AS ROWNUM, LIST.*
+			  FROM (	      
+	</sql>
+	
+	<!--  페이징 하단 -->
+	<sql id="pagingLower">
+			  ) LIST, ( SELECT @RNUM := 0 ) R
+		) T
+		limit #{pageNum}, #{listSize}
+	</sql>
+	
+	<!--  페이징 하단 -->
+	<sql id="pagingLower2">
+		  ) LIST,
+		  ( SELECT @RNUM := 0 ) R
+		  ) T
+		limit #{pageNum}, #{listSize}
+	</sql>	
+	
+</mapper>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+	"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+	
+	<mapper namespace="order">
+		<select id="getOrderCnt" resultType="java.lang.String" parameterType="java.util.HashMap">
+			SELECT COUNT(om.no) as total_cnt
+			FROM order_master om
+			JOIN user_master um on (om.user_no=um.no)
+			JOIN company_master cm on (om.company_no=cm.no)
+			LEFT JOIN card_config cc on (om.no = cc.order_no)
+			WHERE 1=1
+			<if test = "status != 6 and status != null">
+			AND om.status = #{status}
+			</if>
+			<if test = "keyword != null">
+			AND cm.name LIKE concat('%', #{keyword}, '%')
+			</if>
+			<if test = "searchType==1 or searchType==null">
+			AND om.orderdate between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+			</if>
+			<if test = "searchType==2">
+			AND om.enddate between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+			</if>
+			ORDER BY om.orderdate desc
+		</select>
+
+		<select id="getOrderList" resultType="project.pc.model.orderModel" parameterType="java.util.HashMap">
+			<include refid="global.pagingUpper" />
+			SELECT 	om.no, um.id, cm.name,om.orderdate, om.status, om.isclientnew, om.orderth, om.title, cc.category,
+					case cc.category
+						when 0 then '일반'
+						when 1 then '와이드'
+						when 2 then '마이크로'
+						when 3 then '마이크로와이드'
+						else '(미생성)'
+					end AS category_name
+			FROM order_master om
+			JOIN user_master um on (om.user_no=um.no)
+			JOIN company_master cm on (om.company_no=cm.no)
+			LEFT JOIN card_config cc on (om.no = cc.order_no)
+			WHERE 1=1
+			<if test = "status != 6 and status !=null ">
+			AND om.status = #{status}
+			</if>
+			<if test = "keyword != null">
+			AND cm.name LIKE concat('%', #{keyword}, '%')
+			</if>
+			<if test = "searchType==1 or searchType==null">
+			AND om.orderdate between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+			</if>
+			<if test = "searchType==2">
+			AND om.enddate between ifnull(nullif(#{startDate},''), '2017-02-16') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+			</if>
+			ORDER BY om.orderdate desc
+			<include refid="global.pagingLower" />
+		</select>
+
+		<select id="getDetailInfo" resultType="project.pc.model.orderModel" parameterType="Integer">
+			SELECT om.no,om.count,cm.name,um.id,om.tel,om.email,om.address,om.recvdate,om.status,om.language,om.content,om.orderth,om.language,om.title,om.dsfile,om.category
+			FROM order_master om left join user_master um on om.user_no=um.no
+			left join company_master cm on om.company_no=cm.no
+			WHERE om.no = #{no}
+		</select>
+
+		<update id="updateOrder" parameterType="project.pc.model.orderModel">
+			UPDATE order_master SET tel=#{tel},email=#{email},address=#{address},recvdate=#{recvdate},status=#{status},isclientnew=0,isadminnew=1
+			<if test="status == 4">,enddate=sysdate()</if>
+			<if test="status == 3">,distdate=sysdate()</if>
+			WHERE no = #{no}
+		</update>
+
+		<update id="updateToCancleOrder" parameterType="Integer">
+			UPDATE order_master 
+			SET status=5
+			,	distdate=null
+			,	enddate=null
+			WHERE no = #{no}
+		</update>
+
+		<insert id="insertReply" parameterType="project.pc.model.replyModel" useGeneratedKeys="true" keyProperty="no">
+			INSERT INTO reply_master(orderno,regdate,content,isuser) 
+			values(#{orderno},sysdate(),#{content},1)
+		</insert>
+
+		<select id="getReplyInfo" parameterType="Integer" resultType="project.pc.model.replyModel">
+			SELECT * FROM reply_master WHERE orderno = #{no} order by regdate desc;
+		</select>
+
+		<update id="updateNewCount" parameterType="Integer">
+			UPDATE order_master SET isclientnew=0,isadminnew=1
+			WHERE no = #{no}
+		</update>
+
+		<update id="updateReplyConfirm" parameterType="Integer">
+			UPDATE reply_master SET ansdate=SYSDATE()
+			WHERE orderno=#{no} and ansdate is null and isuser=0;
+		</update>
+
+		<update id="updateClientNew">
+			UPDATE order_master SET isclientnew = 0
+			WHERE no = #{orderno};
+		</update>
+
+		<select id="getxlsfiles" parameterType="HashMap" resultType="HashMap">
+			select file
+			from order_data od
+			where od.file != '-' and od.order_no = #{order_no};
+		</select>
+	</mapper>

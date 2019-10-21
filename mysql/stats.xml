@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+	"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+	
+	<mapper namespace="statsMapper">
+		<select id="getScanTotalCount" parameterType="java.util.HashMap" resultType="int">
+			select count(d.no)
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			<if test="st_category > 0">
+			and m.category = #{st_category}
+			</if>
+			<if test="keyword != null">
+			and c.title like concat('%', #{keyword}, '%')
+			</if>
+		</select>
+		
+		<select id="getQRScanTotalCount" parameterType="java.util.HashMap" resultType="int">
+			select count(d.no)
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			and m.no = #{no}
+		</select>
+
+		<select id="getScanTodayCount" parameterType="java.util.HashMap" resultType="int">
+			select count(*)
+			from qr_detinfo
+			where date(date) = curdate()
+		</select>
+
+		<!-- summary -->
+		<select id="getScanData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+ 			select *
+			from stats_summary
+ 		</select>
+
+		<!-- 월별 스캔수 -->
+		<select id="getMonthData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select year(d.date) as year, month(d.date) as month, count(d.no) as count 
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			<if test="st_category > 0">
+			and m.category = #{st_category}
+			</if>
+			<if test="keyword != null">
+			and c.title like concat('%', #{keyword}, '%')
+			</if>
+	 		GROUP BY year(d.date), month(d.date) 
+	 		ORDER BY d.date
+		</select>
+		
+		<!-- 일별 스캔수 -->
+		<select id="getDailyData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select year(d.date) as year, month(d.date) as month, dayofmonth(d.date) as day, count(d.no) as count 
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			<if test="st_category > 0">
+			and m.category = #{st_category}
+			</if>
+			<if test="keyword != null">
+			and c.title like concat('%', #{keyword}, '%')
+			</if>
+			GROUP BY year(d.date), month(d.date), dayofmonth(d.date)
+	 		ORDER BY d.date
+		</select>
+		
+		<!-- 시간대별 스캔수 -->
+		<select id="getHourData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select hour(d.date) as hour, count(d.no) as count
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			<if test="st_category > 0">
+			and m.category = #{st_category}
+			</if>
+			<if test="keyword != null">
+			and c.title like concat('%', #{keyword}, '%')
+			</if>
+			GROUP BY hour(d.date)
+			ORDER BY hour(d.date)
+		</select>
+
+		<!-- 국가별 스캔수 -->
+		<select id="getLocalCnt" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select count(d.no) as count, count(distinct d.nation) as nationcount
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			<if test="st_category > 0">
+			and m.category = #{st_category}
+			</if>
+			<if test="keyword != null">
+			and c.title like concat('%', #{keyword}, '%')
+			</if>
+		</select>
+
+		<!-- 국가별 스캔수 1~3위  -->
+		<select id="getNationRank" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select count(d.no) as count, d.nation
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			<if test="st_category > 0">
+			and m.category = #{st_category}
+			</if>
+			<if test="keyword != null">
+			and c.title like concat('%', #{keyword}, '%')
+			</if>
+			GROUP BY d.nation 
+			ORDER BY count(d.no) desc 
+			LIMIT 0, 3
+		</select>
+
+		<!-- 국가별 스캔 데이터 -->
+		<select id="getNationData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select count(d.no) as count, d.nation
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			<if test="st_category > 0">
+			and m.category = #{st_category}
+			</if>
+			<if test="keyword != null">
+			and c.title like concat('%', #{keyword}, '%')
+			</if>
+			GROUP BY d.nation 
+			ORDER BY count(d.no) desc
+		</select>
+		
+		<!-- 지역별 스캔 데이터 -->
+		<select id="getCityData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select count(d.no) as count, d.nation, d.city
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			<if test="st_category > 0">
+			and m.category = #{st_category}
+			</if>
+			<if test="keyword != null">
+			and c.title like concat('%', #{keyword}, '%')
+			</if>
+			GROUP BY d.nation, d.city 
+			ORDER BY count(d.no) desc
+		</select>
+		
+		
+		
+		
+		
+		
+		
+		<!-- 개별 통계 -->
+		<!-- 스캔 -->
+		<!-- 월별 스캔수 -->
+		<select id="getQRMonthData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select year(d.date) as year, month(d.date) as month, count(d.no) as count 
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			and m.no = #{no}
+	 		GROUP BY year(d.date), month(d.date) 
+	 		ORDER BY d.date
+		</select>
+		
+		<!-- 일별 스캔수 -->
+		<select id="getQRDailyData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select year(d.date) as year, month(d.date) as month, dayofmonth(d.date) as day, count(d.no) as count 
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			and m.no = #{no}
+			GROUP BY year(d.date), month(d.date), dayofmonth(d.date)
+	 		ORDER BY d.date
+		</select>
+		
+		<!-- 시간대별 스캔수 -->
+		<select id="getQRHourData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select hour(d.date) as hour, count(d.no) as count
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			and m.no = #{no}
+			GROUP BY hour(d.date)
+			ORDER BY hour(d.date)
+		</select>
+		<!-- 개별 지역 통계 -->
+		<!-- 국가별 스캔수 -->
+		<select id="getQRLocalCnt" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select count(d.no) as count, count(distinct d.nation) as nationcount
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			and m.no = #{no}
+		</select>
+
+		<!-- 국가별 스캔수 1~3위  -->
+		<select id="getQRNationRank" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select count(d.no) as count, d.nation
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			and m.no = #{no}
+			GROUP BY d.nation 
+			ORDER BY count(d.no) desc 
+			LIMIT 0, 3
+		</select>
+
+		<!-- 국가별 스캔 데이터 -->
+		<select id="getQRNationData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select count(d.no) as count, d.nation
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			and m.no = #{no}
+			GROUP BY d.nation 
+			ORDER BY count(d.no) desc
+		</select>
+		
+		<!-- 지역별 스캔 데이터 -->
+		<select id="getQRCityData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select count(d.no) as count, d.nation, d.city
+			from qr_detinfo d
+			left join qr_config c on (d.qr_config_no = c.no)
+			left join qr_master m on (d.qr_master_no = m.no)
+			where date(d.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+			and m.no = #{no}
+			GROUP BY d.nation, d.city 
+			ORDER BY count(d.no) desc
+		</select>
+		
+		<!-- 오픈 스트리트맵 gpsList -->
+		<select id="getGpsList" parameterType="HashMap" resultType="HashMap">
+			select substring_index(gps,',',1) as lat , substring_index(gps,',',-1) as lng, address
+			from qr_detinfo qd left join qr_master qm on qd.qr_master_no = qm.no
+			left join qr_config qc on qd.qr_config_no = qc.no
+			where nation != '없음'
+			<if test="st_category > 0">
+			and qm.category = #{st_category}
+			</if>
+			<if test="keyword != null and keyword != '' ">
+			and qc.title like concat('%', #{keyword}, '%')
+			</if>
+			and date(qd.date) between ifnull(nullif(#{startDate},''), '2017-06-05') and ifnull(nullif(#{endDate},''), curdate())
+		</select>
+	</mapper>

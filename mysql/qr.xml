@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"
+	"http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+	<mapper namespace="qrMapper">
+		<select id="getQRList" parameterType="java.util.Map" resultType="java.util.HashMap">
+			<include refid="global.pagingUpper" />
+				select m.no no, data, image, count, date_format(m.date, '%Y-%m-%d') as date, qr_config_no, isdelete, title, gen_name,category
+				from qr_master as m left outer join qr_config as c
+				on m.qr_config_no = c.no
+				where m.date between ifnull(nullif(#{startDate},''), '2017-06-07') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+				<if test="title != null and title != ''">
+				AND c.title LIKE concat('%', #{title}, '%')
+				</if>
+				<if test="qr_category != null and qr_category != 0">
+				AND category = #{qr_category}
+				</if>
+				<if test="rd_isdelete != null and rd_isdelete != 'all' ">
+				AND isdelete = #{rd_isdelete}
+				</if>
+				order by m.date desc
+			<include refid="global.pagingLower" />			
+		</select>
+		<select id="getQRListCount" parameterType="java.util.Map" resultType="java.lang.String">
+			SELECT count(m.no) 
+			FROM qr_master as m 
+			left outer join qr_config as c 
+			on m.qr_config_no = c.no
+			where m.date between ifnull(nullif(#{startDate},''), '2017-06-05') and subdate(ifnull(nullif(#{endDate},''), curdate()), interval -1 day)
+			<if test="title != null and title != ''">
+			AND c.title LIKE concat('%', #{title}, '%')
+			</if>
+			<if test="qr_category != 0 and qr_category != null">
+			AND category = #{qr_category}
+			</if>
+			<if test="rd_isdelete != null and rd_isdelete != 'all' ">
+			AND isdelete = #{rd_isdelete}
+			</if>
+		</select>
+		<update id="updateIsdelete" parameterType="java.util.Map">
+			UPDATE qr_master SET isdelete = 1 
+			WHERE no in <foreach collection="noList" item="item" index="index" open="(" separator="," close=")">#{item}</foreach>;
+		</update>
+		<update id="updateIsdelete_normal" parameterType="java.util.Map">
+			UPDATE qr_master SET isdelete = 0
+			WHERE no in <foreach collection="noList" item="item" index="index" open="(" separator="," close=")">#{item}</foreach>;
+		</update>
+		<select id="getQRInfo" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select m.no no, data, image, count, title, gen_name, category
+				from qr_master m left join qr_config c
+				on m.qr_config_no = c.no
+                where m.no = #{masterno};
+		</select>
+		<update id="updateQRData" parameterType="java.util.HashMap">
+			update qr_master m left join qr_config c on m.qr_config_no = c.no
+			set data=#{data}, title=#{title2}, gen_name=#{gen_name}, category=${ca}
+			where m.no = #{no}
+		</update>
+		<insert id="insertQRConfig" parameterType="java.util.HashMap" useGeneratedKeys="true" keyProperty="no">
+			insert into qr_config(title,gen_name) values(#{title},#{gen_name})
+			<selectKey keyProperty="no" resultType="java.lang.Integer" order="AFTER">
+				SELECT LAST_INSERT_ID() as no;
+			</selectKey>
+		</insert>
+		<insert id="insertQRMaster" parameterType="java.util.HashMap" useGeneratedKeys="true" keyProperty="no">
+			insert into qr_master(category,data,qr_config_no)
+			values(#{ca},#{data},#{qr_config_no})
+			<selectKey keyProperty="no" resultType="java.lang.Integer" order="AFTER">
+				SELECT LAST_INSERT_ID() as no;
+			</selectKey>
+		</insert>
+		<update id="updateImagePath" parameterType="java.util.HashMap">
+			update qr_master set image = #{imgPath}
+			where no = #{no}
+		</update>
+		<select id="getImageList" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select * from qr_master
+			where no in <foreach collection="noList" item="item" index="index" open="(" separator="," close=")">#{item}</foreach>;
+		</select>
+		<select id="getfilepath" parameterType="java.util.HashMap" resultType="java.lang.String">
+			select image from qr_master where no = #{no}
+		</select>
+
+		<insert id="insertLargeConfig" parameterType="java.util.HashMap" useGeneratedKeys="true" keyProperty="no">
+  			insert into qr_config (title, gen_name, file) 
+  			values (#{title}, #{gen_name}, #{file})
+			<selectKey keyProperty="no" resultType="java.lang.Integer" order="AFTER">
+				SELECT LAST_INSERT_ID() as no;
+			</selectKey>
+  		</insert>
+
+		<insert id="insertQr" parameterType="java.util.HashMap" useGeneratedKeys="true" keyProperty="no">
+			insert into qr_master (category, data, qr_config_no) 
+			values (#{category}, #{data}, #{qr_config_no})
+			<selectKey keyProperty="no" resultType="java.lang.Integer" order="AFTER">
+				SELECT LAST_INSERT_ID() as no;
+			</selectKey>
+		</insert>
+
+		<update id="updateImage" parameterType="java.util.HashMap">
+			update qr_master
+			set image = #{image}
+			where no = #{qr_master_no}
+		</update>
+
+		<select id="getImages" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+			select * from qr_master where qr_config_no = #{qr_config_no}
+		</select>
+	</mapper>
