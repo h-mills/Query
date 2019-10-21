@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="categoryMapper">
+
+	<select id="getCategoryData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		select no, name, imgpath, markpath from class_master
+		where no = #{category_no}
+	</select>
+
+	<select id="getProductData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		SELECT no, name, ci_path, bi_path, rep_path, category_no, no AS dna_no
+			 , CASE
+			 	 WHEN NULLIF(IFNULL(ci_path, ''), '') IS NULL THEN bi_path
+			 	 ELSE ci_path
+			   END markpath
+			 , CASE
+			 	 WHEN NULLIF(IFNULL(rep_path, ''), '') IS NULL THEN ci_path
+			 	 ELSE rep_path
+			   END imgpath
+        FROM product_master
+		WHERE no = #{dna_no}
+	</select>
+
+</mapper>
